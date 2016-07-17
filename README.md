@@ -2,7 +2,7 @@
 
 This is a very simple script that sends a video/sound/image URL from your desktop to Kodi.
 
-[[https://cloud.githubusercontent.com/assets/7693838/16900004/4070bbf2-4c17-11e6-8b47-52b3020e2213.png|alt=screenshot]]
+![Screenshot of dialog box](https://cloud.githubusercontent.com/assets/7693838/16900025/29b53d9c-4c18-11e6-8a74-e6d88c33e503.png)
 
 * Send video links to Kodi from your desktop, Chromecast style!
 * No need to install the relevant add-ons in Kodi (unless it's Youtube).
