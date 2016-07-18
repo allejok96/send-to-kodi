@@ -4,7 +4,7 @@ This is a very simple script that sends a video/sound/image URL from your deskto
 
 ![Screenshot of dialog box](https://cloud.githubusercontent.com/assets/7693838/16900025/29b53d9c-4c18-11e6-8a74-e6d88c33e503.png)
 
-* Send video links to Kodi from your desktop, Chromecast style!
+* Send video links to Kodi from your desktop.
 * No need to install the relevant add-ons in Kodi (unless it's Youtube).
 * `youtube-dl` supports sites that may not have an Kodi add-on.
 * No support for local files, though.
