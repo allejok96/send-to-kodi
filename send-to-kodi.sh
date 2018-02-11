@@ -86,7 +86,7 @@ if [[ -e $input ]]; then
     
 # Youtube
 elif [[ $input =~ ^https?://(www\.)?youtube\.com/watch\?v= ]]; then
-    url="$yt$(sed 's/.*[&?]v=\([a-zA-Z0-9]\+\).*/\1/' <<< "$input")"
+    url="$ytplugin$(sed 's/.*[&?]v=\([a-zA-Z0-9]\+\).*/\1/' <<< "$input")"
 elif [[ $input =~ ^https?://youtu\.be/[a-zA-Z0-9] ]]; then
     url="$ytplugin$(sed 's/^https\?:\/\/youtu\.be\/\([a-zA-Z0-9]\+\).*/\1/' <<< "$input")"
     
