@@ -84,11 +84,9 @@ if [[ -e $input ]]; then
     
     url="tcp://$local_hostname:$local_port"
     
-# Youtube
-elif [[ $input =~ ^https?://(www\.)?youtube\.com/watch\?v= ]]; then
-    url="$ytplugin$(sed 's/.*[&?]v=\([a-zA-Z0-9]\+\).*/\1/' <<< "$input")"
-elif [[ $input =~ ^https?://youtu\.be/[a-zA-Z0-9] ]]; then
-    url="$ytplugin$(sed 's/^https\?:\/\/youtu\.be\/\([a-zA-Z0-9]\+\).*/\1/' <<< "$input")"
+# youtube.com / youtu.be
+elif [[ $input =~ ^https?://(www\.)?youtu(\.be/|be\.com/watch\?v=) ]]; then
+    url="$ytplugin$(sed 's/.*\(youtu\.be\/\|[&?]v=\)\([a-zA-Z0-9_-]\+\).*/\2/' <<< "$input")"
     
 # Playable formats
 elif [[ $input =~ \.(mp4|mkv|mov|avi|flv|wmv|asf|mp3|flac|mka|m4a|aac|ogg|pls|jpg|png|gif|jpeg|tiff)(\?.*)?$ ]]; then
@@ -96,7 +94,7 @@ elif [[ $input =~ \.(mp4|mkv|mov|avi|flv|wmv|asf|mp3|flac|mka|m4a|aac|ogg|pls|jp
      
 # Youtube-dl
 else
-    type youtube-dl &>/dev/null || exit 1
+    type youtube-dl &>/dev/null || error "youtube-dl required"
     url="$(youtube-dl -gf best "$input")" || error "No videos found, or site not supported by youtube-dl"
 fi
 
