@@ -2,31 +2,35 @@
 
 ![Screenshot of dialog box](https://cloud.githubusercontent.com/assets/7693838/16900025/29b53d9c-4c18-11e6-8a74-e6d88c33e503.png)
 
-* Paste a video URL to play it on Kodi.
-* No Kodi add-ons required (except for Youtube).
-* `youtube-dl` supports a bunch of sites.
-* Stream local files from computer to Kodi.
+* Paste an URL to play it on Kodi.
+* Stream files from your computer to Kodi.
+* Uses `youtube-dl` to support hundreds of sites.
+* MPEG-DASH (high quality video) support.
+* No Kodi add-ons required for standard video.
 
 ## Usage
 
 1. In Kodi, enable *System > Servicies > Web server > Allow remote control via HTTP*.
 
-1. Add `host` and `port` to the head of the script, and optionally `user` and `pass`.
+1. Add `HOST` and `PORT` to the head of the script, and optionally `USERNAME` and `PASSWORD`.
+
+1. For full funcitonality:
+   - Make sure Kodi has `InputStream.Adaptive` installed.
+   - Install `python-twisted` and `youtube-dl` on your computer.
 
 1. Run the script with no arguments for a GUI, or from the command line
 
         ./send-to-kodi.sh https://vimeo.com/174312494
 
-## Requirements
+## Optional depencencies
 
-- curl
-- zenity (for GUI)
-- Youtube add-on in Kodi (youtube support)
-- youtube-dl (for sites other than youtube, ironically)
-- netcat (local streaming)
+- zenity (GUI)
+- youtube-dl (video sites)
+- python-twisted (local file share)
+- InputStream.Adaptive in Kodi (MPEG-DASH)
+- Youtube add-on in Kodi (better youtube support)
 
-## Inspired by
+## See also
 
-- [Firefox extension](https://addons.mozilla.org/en-US/firefox/addon/send-to-xbmc/) supports Youtube and common file formats.
-- [Chrome extension](https://chrome.google.com/webstore/detail/play-to-kodi/fncjhcjfnnooidlkijollckpakkebden?hl=en) supports Youtube, Twitch.tv, Hulu, SVTPlay.se, SoundCloud, and much more (requires the relevant addons to be installed in Kodi)
-- [@facmachado's send2kodi script](https://github.com/facmachado/send2kodi)
+- [Some Firefox extension](https://github.com/dirkjanm/firefox-send-to-xbmc)
+- [Some Chrome extension](https://github.com/khloke/play-to-xbmc-chrome)
