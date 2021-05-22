@@ -8,29 +8,26 @@
 * MPEG-DASH (high quality video) support.
 * No Kodi add-ons required for standard video.
 
-## Usage
+## Installation
 
 1. In Kodi, enable *System > Servicies > Web server > Allow remote control via HTTP*.
 
-1. Add `HOST` and `PORT` to the head of the script, and optionally `USERNAME` and `PASSWORD`.
+1. Install on your Kodi box:
+   - `InputStream.Adaptive` to enable MPEG-DASH support.
+   - *Youtube add-on* for better youtube support.
 
-1. For full funcitonality:
-   - Make sure Kodi has `InputStream.Adaptive` installed.
-   - Install `python-twisted` and `youtube-dl` on your computer.
+1. Install on your Linux machine:
+   - `zenity` to get a GUI.
+   - `youtube-dl` to add support for hundreds of video sites.   
+   - `python-twisted` to enable local file sharing and MPEG-DASH support.
 
-1. Run the script with no arguments for a GUI, or from the command line
+1. Now you can run it from the command line like so:
 
-        ./send-to-kodi.sh https://vimeo.com/174312494
-
-## Optional depencencies
-
-- zenity (GUI)
-- youtube-dl (video sites)
-- python-twisted (local file share)
-- InputStream.Adaptive in Kodi (MPEG-DASH)
-- Youtube add-on in Kodi (better youtube support)
-
-## See also
-
-- [Some Firefox extension](https://github.com/dirkjanm/firefox-send-to-xbmc)
-- [Some Chrome extension](https://github.com/khloke/play-to-xbmc-chrome)
+       ./send-to-kodi -r kodibox:8080 -u kodi:SomePassword https://vimeo.com/174312494
+   
+1. For a more polished experience, edit `send-to-kodi.desktop` and add your credentials.
+   
+1. Copy to system folders:
+   
+       sudo cp send-to-kodi.sh /usr/local/bin/
+       sudo cp send-to-kodi.desktop /usr/share/applications/
