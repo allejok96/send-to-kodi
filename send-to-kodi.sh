@@ -1,41 +1,26 @@
 #!/bin/bash
 
-# Kodi settings (required)
-HOST=
-PORT=
-
-# Login (optional)
-USERNAME=
-PASSWORD=
-
-# Set to 1 to use Kodi's youtube addon instead of youtube-dl
-KODI_YOUTUBE=0
-
-# Local file sharing settings
-DOWNLOAD_DIR=~
-HTTP_PORT=8080
-
-# Just some internal global variables
-GUI=1
-HTTP_URL="http://$HOSTNAME:$HTTP_PORT/media"
-TWISTED_PATH="$(type -p twist || type -p twist3)"
-TMP_FILE=  # Name of downloaded video
-TMP_DIR=  # Webserver working directory
-
-
 show_help()
 {
-    cat<<EOF
-Send a video or URL to Kodi
-Usage: send-to-kodi.sh [URL]
+    cat<<EOF >&2
+Usage: send-to-kodi.sh [options] -r HOST:PORT [URL|FILE]
 
-Run without arguments to get a GUI. Configuration is done in the head of the script. 
+Send a local or online video to Kodi. Run without URL to get a GUI.
+
+Options:
+  -d DIRECTORY           Temporary download directory for high quality streaming (default ~)
+  -l PORT                Local port number used for file sharing (default 8080)
+  -r HOST:PORT           Kodi remote address
+  -u USERNAME:PASSWORD   Kodi login credentials
+  -y                     Use Kodi's youtube addon instead of youtube-dl
+
+Environment variables:
+  TWISTED_PATH           Path to python-twisted webserver
 
 Optional dependencies:
-  zenity: dialog boxes
-  youtube-dl: support for hunderds of sites
-  python-twisted: local media
-  Kodi's Youtube addon
+  zenity                 Graphical interface
+  youtube-dl             Support for hunderds of sites
+  python-twisted         Local media sharing (or high quality download)
 EOF
 }
 
@@ -47,9 +32,8 @@ error()
     if ((GUI)); then
         zenity --error --ellipsize --text "$1"
     else
-        printf '\n%s\n' "$1" >&2
+        printf '%s\n' "$1" >&2
     fi
-    
     exit 1
 }
 
@@ -61,7 +45,7 @@ question()
     if ((GUI)); then
         zenity --question --ellipsize --text "$1"
     else
-        printf '\n%s [y/N] ' "$1" >&2
+        printf '%s [y/N] ' "$1" >&2
         read
         [[ $REPLY =~ y|Y ]]
     fi
@@ -105,7 +89,8 @@ serve()
     # 2. Python http.server raises BrokenPipeError sometimes with big files,
     #    and also some other error because Kodi keeps breaking the connection
     # 3. Twisted has worked so far for me, but it's a bit fat, I know
-    
+
+    [[ $TWISTED_PATH ]] || TWISTED_PATH="$(type -p twist || type -p twist3)"
     [[ $TWISTED_PATH ]] || error "python-twisted is not installed"
     
     # Prepare a directory
@@ -115,12 +100,7 @@ serve()
     fi
     
     echo "Starting webserver..." >&2
-    if ((GUI)); then
-        # Start server in subshell and send input to zenity just to let it know it's still running
-        zenity --progress --pulsate --text "HTTP file share is active..." < <("$TWISTED_PATH" web --path "$TMP_DIR" --listen "tcp:$HTTP_PORT") &
-    else
-        "$TWISTED_PATH" web --path "$TMP_DIR" --listen "tcp:$HTTP_PORT" &
-    fi
+    "$TWISTED_PATH" web --path "$TMP_DIR" --listen "tcp:$SHARE_PORT" & TWISTED_PID=$!
     
     # Give it a few secs to start up
     sleep 3s
@@ -130,44 +110,61 @@ serve()
 # The EXIT trap
 cleanup()
 {
-    [[ -L $TMP_DIR/media ]] && rm "${TMP_DIR:?}/media"
-    [[ -f $TMP_DIR/media.strm ]] && rm "${TMP_DIR:?}/media.strm"
-    [[ -d $TMP_DIR ]] && rmdir "$TMP_DIR"
-    [[ -f $DOWNLOAD_DIR/$TMP_FILE ]] && question "Delete $TMP_FILE?" && rm "$DOWNLOAD_DIR/$TMP_FILE"
-    kill 0
+    if [[ -d $TMP_DIR ]]; then
+        [[ -L $TMP_DIR/media ]] && rm "$TMP_DIR/media"
+        [[ -f $TMP_DIR/media.strm ]] && rm "$TMP_DIR/media.strm"
+        rmdir "$TMP_DIR"
+    fi
+    if [[ -d $DOWNLOAD_DIR && -f $DOWNLOAD_DIR/$TMP_FILE ]]; then
+        question "Delete $TMP_FILE?" && rm "$DOWNLOAD_DIR/$TMP_FILE"
+    fi
+    [[ $TWISTED_PID ]] && kill "$TWISTED_PID"
 }
 
 
 ### Beginning of script
 
+GUI=1
+DOWNLOAD_DIR=~
+KODI_YOUTUBE=0
+SHARE_PORT=8080
 
-[[ $HOST && $PORT ]] || error "Please specify HOST and PORT at the top of the script"
-[[ "$1" = --help ]] && show_help
+while [[ $* ]]; do
+    case "$1" in
+        -h|--help) show_help;    exit  ;;
+        -d) DOWNLOAD_DIR="$2";   shift ;;
+        -l) SHARE_PORT="$2";     shift ;;
+        -r) REMOTE="$2";         shift ;;
+        -u) LOGIN="$2";          shift ;;
+        -y) KODI_YOUTUBE=1;            ;;
+        -*) error "Unknown flag: $1"   ;;
+         *) INPUT="$1"; GUI=0          ;;
+    esac
+    shift
+done
 
-trap 'cleanup' EXIT
+[[ $REMOTE ]] || error "No hostname specified, see --help"
 
-# Optional GUI
-if [[ $1 ]]; then
-    input="$1"
-    GUI=0
-else
-    input="$(zenity --entry --title "Send to Kodi" --text "Paste an URL or press OK to select a file")" || exit
-    [[ $input ]] || input="$(zenity --file-selection)" || exit
+if ((GUI)); then
+    INPUT="$(zenity --entry --title "Send to Kodi" --text "Paste an URL or press OK to select a file")" || exit
+    [[ $INPUT ]] || INPUT="$(zenity --file-selection)" || exit
 fi
 
 
+trap 'cleanup' EXIT
+
 # Local file
-if [[ -f $input ]]; then
-    serve "$input"
-    url="$HTTP_URL"
+if [[ -f $INPUT ]]; then
+    serve "$INPUT"
+    url="http://$HOSTNAME:$SHARE_PORT/media"
 
 # Formats supported by Kodi
-elif [[ $input =~ \.(mp4|mkv|mov|avi|flv|wmv|asf|mp3|flac|mka|m4a|aac|ogg|pls|jpg|png|gif|jpeg|tiff)(\?.*)?$ ]]; then
-     url="$input"
+elif [[ $INPUT =~ \.(mp4|mkv|mov|avi|flv|wmv|asf|mp3|flac|mka|m4a|aac|ogg|pls|jpg|png|gif|jpeg|tiff)(\?.*)?$ ]]; then
+     url="$INPUT"
      
 # youtube.com / youtu.be
-elif [[ KODI_YOUTUBE == 1 && $input =~ ^https?://(www\.)?youtu(\.be/|be\.com/watch\?v=) ]]; then
-    id="$(sed -E 's%.*(youtu\.be/|[&?]v=)([a-zA-Z0-9_-]+).*%\2%' <<< "$input")"
+elif ((KODI_YOUTUBE)) && [[ $INPUT =~ ^https?://(www\.)?youtu(\.be/|be\.com/watch\?v=) ]]; then
+    id="$(sed -E 's%.*(youtu\.be/|[&?]v=)([a-zA-Z0-9_-]+).*%\2%' <<< "$INPUT")"
     url="plugin://plugin.video.youtube/?action=play_video&videoid=$id"
 
 # youtube-dl
@@ -205,23 +202,23 @@ else
     dash='^[^?]*\.mpd(\?|$)'
     
     echo "Looking for best video..." >&2
-    best="$(youtube-dl -g "$input")" || error "No videos found or site not supported by youtube-dl"
+    best="$(youtube-dl -g "$INPUT")" || error "No videos found or site not supported by youtube-dl"
     echo "Looking for compatible video..." >&2
-    url="$(youtube-dl -gf best "$input")"
+    url="$(youtube-dl -gf best "$INPUT")"
     
     # There is a better URL (but it will need some pre-processing)
-    if [[ $url != $best ]]; then
+    if [[ $url != "$best" ]]; then
         video="$(head -n1 <<< "$best" | tail -n1)"
         audio="$(head -n2 <<< "$best" | tail -n1)"
         
         # MPEG-DASH question
-        if [[ $video == $audio && $video =~ $dash ]]; then
+        if [[ $video == "$audio" && $video =~ $dash ]]; then
             [[ -z $url || $url =~ $dash ]] || question "Use MPEG-DASH for better quality?" && url="$video"
             
         # Download with youtube-dl
         elif [[ -z $url ]] || question "Download for better quality?"; then
-            download_and_serve "$input"
-            url="$HTTP_URL"
+            download_and_serve "$INPUT"
+            url="http://$HOSTNAME:$SHARE_PORT/media"
         fi
     fi
     
@@ -229,25 +226,32 @@ else
     # Do this down here since both $url and $best can be a MPD
     if [[ $url =~ $dash ]]; then
         serve  # create TMP_DIR
-        (echo '#KODIPROP:inputstreamaddon=inputstream.adaptive'
+        (echo '#KODIPROP:inputstream=inputstream.adaptive'
         echo '#KODIPROP:inputstream.adaptive.manifest_type=mpd'
         echo "$video") > "$TMP_DIR/media.strm"
-        url="$HTTP_URL.strm"
+        url="http://$HOSTNAME:$SHARE_PORT/media.strm"
     fi
     
 fi
 
-
 echo "Requesting to play: $url" >&2
 
-curl -X POST -H "Content-Type: application/json" \
-     ${USERNAME:+--user "$USERNAME:$PASSWORD"} \
-     -d '{"jsonrpc":"2.0","method":"Player.Open","params":{"item":{"file":"'"$url"'"}},"id":1}' \
-     http://$HOST:$PORT/jsonrpc \
-|| error "Failed to send - is Kodi running?"
-    
-echo
+response="$(curl -X POST -H 'Content-Type: application/json' \
+            ${LOGIN:+--user "$LOGIN"} \
+            -d '{"jsonrpc":"2.0","method":"Player.Open","params":{"item":{"file":"'"$url"'"}},"id":1}' \
+            "http://$REMOTE/jsonrpc" 2>/dev/null)"
 
+[[ $? ]] || error "Failed to send - is Kodi running?"
+[[ $response ]] || error "No response from Kodi - maybe wrong login?"
+[[ $response == *'"result":"OK"'* ]] || error "Kodi response: $response"
+echo "Response: OK" >&2
 
 # Maybe wait for server (trap will kill it on EXIT)
-wait
+if [[ $TWISTED_PID ]]; then
+    if ((GUI)); then
+        zenity --info --no-wrap --text "File share active" --ok-label "Stop"
+    else
+        echo "File share active, press Ctrl+C to abort..." >&2
+        wait
+    fi
+fi
