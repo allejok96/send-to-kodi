@@ -1,6 +1,6 @@
 # Send to Kodi
 
-![Screenshot of dialog box](https://cloud.githubusercontent.com/assets/7693838/16900025/29b53d9c-4c18-11e6-8a74-e6d88c33e503.png)
+![Screenshot of dialog box](https://user-images.githubusercontent.com/7693838/119225728-d94f1000-bb05-11eb-9ff2-5a32d2974f55.png)
 
 * Paste an URL to play it on Kodi.
 * Stream files from your computer to Kodi.
