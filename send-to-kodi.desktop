@@ -1,5 +1,5 @@
 [Desktop Entry]
-Exec=send-to-kodi.sh -r HOSTNAME:PORT -u USERNAME:PASSWORD
+Exec=send-to-kodi.sh -r HOSTNAME:PORT -u USERNAME:PASSWORD -d /tmp
 Name=Send to Kodi
 Type=Application
 Comment=Play a video on Kodi

@@ -6,12 +6,14 @@ show_help()
 Usage: send-to-kodi.sh [options] -r HOST:PORT [URL|FILE]
 
 Send a local or online video to Kodi. Run without URL to get a GUI.
+In the GUI, you may prepend an URL with ! to disable resolving (like -x).
 
 Options:
-  -d DIRECTORY           Temporary download directory for high quality streaming (default ~)
+  -d DIRECTORY           Temporary download directory for high quality streaming
   -l PORT                Local port number used for file sharing (default 8080)
   -r HOST:PORT           Kodi remote address
   -u USERNAME:PASSWORD   Kodi login credentials
+  -x                     Do not try to resolve URL, just send it
   -y                     Use Kodi's youtube addon instead of youtube-dl
 
 Environment variables:
@@ -124,9 +126,12 @@ cleanup()
 
 ### Beginning of script
 
+shopt -s nocasematch
+
 GUI=1
-DOWNLOAD_DIR=~
+DOWNLOAD_DIR=.
 KODI_YOUTUBE=0
+SEND_RAW=0
 SHARE_PORT=8080
 
 while [[ $* ]]; do
@@ -136,6 +141,7 @@ while [[ $* ]]; do
         -l) SHARE_PORT="$2";     shift ;;
         -r) REMOTE="$2";         shift ;;
         -u) LOGIN="$2";          shift ;;
+        -x) SEND_RAW=1;                ;;
         -y) KODI_YOUTUBE=1;            ;;
         -*) error "Unknown flag: $1"   ;;
          *) INPUT="$1"; GUI=0          ;;
@@ -153,13 +159,24 @@ fi
 
 trap 'cleanup' EXIT
 
+# Don't try to resolve
+if ((SEND_RAW)); then
+    url="$INPUT"
+
+elif [[ $INPUT =~ ^! ]]; then
+    url="${INPUT:1}"
+
 # Local file
-if [[ -f $INPUT ]]; then
+elif [[ -f $INPUT ]]; then
     serve "$INPUT"
     url="http://$HOSTNAME:$SHARE_PORT/media"
 
+# Other protocols
+elif ! [[ $INPUT =~ ^https?:// ]]; then
+     url="$INPUT"
+
 # Formats supported by Kodi
-elif [[ $INPUT =~ \.(mp4|mkv|mov|avi|flv|wmv|asf|mp3|flac|mka|m4a|aac|ogg|pls|jpg|png|gif|jpeg|tiff)(\?.*)?$ ]]; then
+elif [[ $INPUT =~ \.(mp[g34]|mk[va]|mov|avi|flv|wmv|asf|flac|m4[av]|aac|og[gm]|pls|jpe?g|png|gif|jpe?g|tiff|m3u8?)(\?.*)?$ ]]; then
      url="$INPUT"
      
 # youtube.com / youtu.be
