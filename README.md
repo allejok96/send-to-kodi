@@ -10,7 +10,7 @@
 
 ## Installation
 
-1. In Kodi, enable *System > Servicies > Web server > Allow remote control via HTTP*.
+1. In Kodi, enable *System > Services > Web server > Allow remote control via HTTP*.
 
 1. Install on your Kodi box:
    - `InputStream.Adaptive` to enable MPEG-DASH support.
