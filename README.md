@@ -4,7 +4,7 @@
 
 * Paste an URL to play it on Kodi.
 * Stream files from your computer to Kodi.
-* Uses `youtube-dl` to support hundreds of sites.
+* Uses `yt-dlp` (fork of youtube-dl) to support hundreds of sites.
 * MPEG-DASH (high quality video) support.
 * No Kodi add-ons required for standard video.
 
@@ -18,7 +18,7 @@
 
 1. Install on your Linux machine:
    - `zenity` to get a GUI.
-   - `youtube-dl` to add support for hundreds of video sites.   
+   - `yt-dlp` to add support for hundreds of video sites.   
    - `python-twisted` to enable local file sharing and MPEG-DASH support.
 
 1. Now you can run it from the command line like so:

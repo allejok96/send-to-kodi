@@ -14,14 +14,14 @@ Options:
   -r HOST:PORT           Kodi remote address
   -u USERNAME:PASSWORD   Kodi login credentials
   -x                     Do not try to resolve URL, just send it
-  -y                     Use Kodi's youtube addon instead of youtube-dl
+  -y                     Use Kodi's youtube addon instead of yt-dlp
 
 Environment variables:
   TWISTED_PATH           Path to python-twisted webserver
 
 Optional dependencies:
   zenity                 Graphical interface
-  youtube-dl             Support for hunderds of sites
+  yt-dlp             Support for hunderds of sites
   python-twisted         Local media sharing (or high quality download)
 EOF
 }
@@ -54,23 +54,23 @@ question()
 }
 
 
-# Download using youtube-dl and maybe show progress bar
+# Download using yt-dlp and maybe show progress bar
 # args: URL
 download_and_serve()
 {
     echo "Getting video title..." >&2
-    TMP_FILE="$(youtube-dl --get-filename "$1")"
+    TMP_FILE="$(yt-dlp --get-filename "$1")"
     file="${DOWNLOAD_DIR:?}/$TMP_FILE"
     
     echo "Downloading video..." >&2
     if ((GUI)); then
         # Filter out the percentage but only 2 digits, never print 100 as it will kill zenity
-        zenity --progress --auto-close --text "Downloading video..." < <(youtube-dl -o "$file" --newline "$1" | sed -Eun 's/.* ([0-9][0-9]?)\.[0-9]%.*/\1/p') || exit
+        zenity --progress --auto-close --text "Downloading video..." < <(yt-dlp -o "$file" --newline "$1" | sed -Eun 's/.* ([0-9][0-9]?)\.[0-9]%.*/\1/p') || exit
     else
-        youtube-dl -o "$file" "$1"
+        yt-dlp -o "$file" "$1"
     fi
 
-    # Sometimes youtube-dl changes the filename from mp4 to mkv
+    # Sometimes yt-dlp changes the filename from mp4 to mkv
     if [[ ! -f $file ]]; then
         file="${file%.*}.mkv"
         TMP_FILE="${TMP_FILE%.*}.mkv"
@@ -184,16 +184,16 @@ elif ((KODI_YOUTUBE)) && [[ $INPUT =~ ^https?://(www\.)?youtu(\.be/|be\.com/watc
     id="$(sed -E 's%.*(youtu\.be/|[&?]v=)([a-zA-Z0-9_-]+).*%\2%' <<< "$INPUT")"
     url="plugin://plugin.video.youtube/?action=play_video&videoid=$id"
 
-# youtube-dl
+# yt-dlp
 else
-    # youtube-dl -g may output different kinds of URL's:
+    # yt-dlp -g may output different kinds of URL's:
     #
     # 1. Single video URL
     #    This can be played by Kodi directly, most of the time.
     #    Sometimes this will be an MPD and we'll have to do step 3.
     #
     # 2. Video URL + Audio URL
-    #    This needs downloading and muxing, which youtube-dl will do for us.
+    #    This needs downloading and muxing, which yt-dlp will do for us.
     #    Kodi can do that natively, but only for local media.
     #    Only when an audio file has the same name as a video file.
     #    It doesn't work for STRM files...
@@ -203,7 +203,7 @@ else
     # 3. MPD + same MPD
     #    Kodi supports MPD playback with InputStream.Adaptive.
     #    Only way to trigger that is through an addon, or by using #KODIPROP in a STRM file.
-    #    In my testing the two MPD's provided by youtube-dl have been identical.
+    #    In my testing the two MPD's provided by yt-dlp have been identical.
     #
     #    If only... Player.Open {"file":"http://playlist.mpd"}
     #
@@ -215,13 +215,13 @@ else
     #    in the script, because I have no sites to test on.
     #
 
-    type youtube-dl &>/dev/null || error "youtube-dl not installed"
+    type yt-dlp &>/dev/null || error "yt-dlp not installed"
     dash='^[^?]*\.mpd(\?|$)'
     
     echo "Looking for best video..." >&2
-    best="$(youtube-dl -g "$INPUT")" || error "No videos found or site not supported by youtube-dl"
+    best="$(yt-dlp -g "$INPUT")" || error "No videos found or site not supported by yt-dlp"
     echo "Looking for compatible video..." >&2
-    url="$(youtube-dl -gf best "$INPUT")"
+    url="$(yt-dlp -gf best "$INPUT")"
     
     # There is a better URL (but it will need some pre-processing)
     if [[ $url != "$best" ]]; then
@@ -232,7 +232,7 @@ else
         if [[ $video == "$audio" && $video =~ $dash ]]; then
             [[ -z $url || $url =~ $dash ]] || question "Use MPEG-DASH for better quality?" && url="$video"
             
-        # Download with youtube-dl
+        # Download with yt-dlp
         elif [[ -z $url ]] || question "Download for better quality?"; then
             download_and_serve "$INPUT"
             url="http://$HOSTNAME:$SHARE_PORT/media"
