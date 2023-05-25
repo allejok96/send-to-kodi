@@ -24,10 +24,12 @@
 1. Now you can run it from the command line like so:
 
        ./send-to-kodi -r kodibox:8080 -u kodi:SomePassword https://vimeo.com/174312494
-   
+
 1. For a more polished experience, edit `send-to-kodi.desktop` and add your credentials.
-   
-1. Copy to system folders:
-   
-       sudo cp send-to-kodi.sh /usr/local/bin/
-       sudo cp send-to-kodi.desktop /usr/share/applications/
+
+1. Install it to your user folder:
+
+       chmod 600 send-to-kodi.desktop
+       mkdir -p ~/.local/bin ~/.local/share/applications
+       cp send-to-kodi.sh ~/.local/bin/send-to-kodi
+       cp send-to-kodi.desktop ~/.local/share/applications/
