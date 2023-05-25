@@ -18,10 +18,11 @@ Options:
 
 Environment variables:
   TWISTED_PATH           Path to python-twisted webserver
+  YOUTUBE_DL             Path to youtube-dl (or one of its forks)
 
 Optional dependencies:
   zenity                 Graphical interface
-  youtube-dl             Support for hunderds of sites
+  youtube-dl             Support for hundreds of sites
   python-twisted         Local media sharing (or high quality download)
 EOF
 }
@@ -54,20 +55,30 @@ question()
 }
 
 
+# Run youtube-dl or whatever we find
+# args: *
+ytdl()
+{
+		[[ $YOUTUBE_DL ]] || YOUTUBE_DL="$(type -p youtube-dlp || type -p youtube-dl)"
+		[[ $YOUTUBE_DL ]] || error "youtube-dl (or youtube-dlp) is not installed"
+		"$YOUTUBE_DL" "$@"
+}
+
+
 # Download using youtube-dl and maybe show progress bar
 # args: URL
 download_and_serve()
 {
     echo "Getting video title..." >&2
-    TMP_FILE="$(youtube-dl --get-filename "$1")"
+    TMP_FILE="$(ytdl --get-filename "$1")"
     file="${DOWNLOAD_DIR:?}/$TMP_FILE"
     
     echo "Downloading video..." >&2
     if ((GUI)); then
         # Filter out the percentage but only 2 digits, never print 100 as it will kill zenity
-        zenity --progress --auto-close --text "Downloading video..." < <(youtube-dl -o "$file" --newline "$1" | sed -Eun 's/.* ([0-9][0-9]?)\.[0-9]%.*/\1/p') || exit
+        zenity --progress --auto-close --text "Downloading video..." < <(ytdl -o "$file" --newline "$1" | sed -Eun 's/.* ([0-9][0-9]?)\.[0-9]%.*/\1/p') || exit
     else
-        youtube-dl -o "$file" "$1"
+        ytdl -o "$file" "$1"
     fi
 
     # Sometimes youtube-dl changes the filename from mp4 to mkv
@@ -215,13 +226,12 @@ else
     #    in the script, because I have no sites to test on.
     #
 
-    type youtube-dl &>/dev/null || error "youtube-dl not installed"
     dash='^[^?]*\.mpd(\?|$)'
     
     echo "Looking for best video..." >&2
-    best="$(youtube-dl -g "$INPUT")" || error "No videos found or site not supported by youtube-dl"
+    best="$(ytdl -g "$INPUT")" || error "No videos found or site not supported by youtube-dl"
     echo "Looking for compatible video..." >&2
-    url="$(youtube-dl -gf best "$INPUT")"
+    url="$(ytdl -gf best "$INPUT")"
     
     # There is a better URL (but it will need some pre-processing)
     if [[ $url != "$best" ]]; then
