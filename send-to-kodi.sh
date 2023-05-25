@@ -59,8 +59,8 @@ question()
 # args: *
 ytdl()
 {
-		[[ $YOUTUBE_DL ]] || YOUTUBE_DL="$(type -p youtube-dlp || type -p youtube-dl)"
-		[[ $YOUTUBE_DL ]] || error "youtube-dl (or youtube-dlp) is not installed"
+		[[ $YOUTUBE_DL ]] || YOUTUBE_DL="$(type -p yt-dlp || type -p youtube-dl)"
+		[[ $YOUTUBE_DL ]] || error "youtube-dl (or yt-dlp) is not installed"
 		"$YOUTUBE_DL" "$@"
 }
 
